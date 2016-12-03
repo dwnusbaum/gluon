@@ -427,11 +427,12 @@ impl<'a: 'e, 'e> Printer<'a, 'e> {
     where
         Id: AsRef<str>,
     {
-        self.pretty_expr_with_shebang_line(expr)
-            .append(self.comments(Span::new(
+        self.pretty_expr_with_shebang_line(expr).append(
+            self.comments(Span::new(
                 expr.span.end,
                 BytePos::from(self.source.src().len()),
-            )))
+            )),
+        )
     }
 
     fn find_shebang_line(&self) -> Option<&'a str> {
@@ -474,13 +475,12 @@ impl<'a: 'e, 'e> Printer<'a, 'e> {
         let comments = self.comments(Span::new(previous_end, expr.span.start));
         let doc = match expr.value {
             Expr::App(ref func, ref args) => {
-                let arg_iter = once(&**func)
-                    .chain(args)
-                    .tuple_windows()
-                    .map(|(prev, arg)| {
+                let arg_iter = once(&**func).chain(args).tuple_windows().map(
+                    |(prev, arg)| {
                         self.space(Span::new(prev.span.end, arg.span.start))
                             .append(pretty(arg))
-                    });
+                    },
+                );
                 pretty(func)
                     .append(arena.concat(arg_iter).nest(INDENT))
                     .group()
@@ -626,7 +626,7 @@ impl<'a: 'e, 'e> Printer<'a, 'e> {
                             " ",
                             bind.name.value.as_ref(),
                             " ",
-                            arena.concat(bind.alias.value.args.iter().map(|arg| {
+                            arena.concat(bind.alias.value.params().iter().map(|arg| {
                                 chain![arena;
                                     if *arg.kind != Kind::Type && *arg.kind != Kind::Hole {
                                         chain![arena;
@@ -756,9 +756,10 @@ impl<'a: 'e, 'e> Printer<'a, 'e> {
                         |spanned| spanned.value,
                     ))
                     .nest(INDENT)
-                    .append(
-                        self.whitespace(Span::new(last_field_end, expr.span.end), line.clone()),
-                    )
+                    .append(self.whitespace(
+                        Span::new(last_field_end, expr.span.end),
+                        line.clone(),
+                    ))
                     .group()
                     .append("}");
                 (arena.text("{"), record)
